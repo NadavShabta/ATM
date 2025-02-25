@@ -1,14 +1,11 @@
-# run.py
-
 """
 Entry point for the ATM System Flask application.
-This script imports the configured Flask app from the app package and starts the server.
-For production deployments, consider using a production-grade WSGI server such as Gunicorn.
+Automatically initializes the database and starts the server.
 """
 
 from app import app
 
 if __name__ == '__main__':
-    # Run the Flask development server on the default port (5000).
-    # The debug mode is enabled here for development purposes.
-    app.run(debug=True)
+    # Start the Flask development server
+    app.run(host="127.0.0.1", port=5000)
+
