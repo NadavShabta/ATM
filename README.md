@@ -280,86 +280,110 @@ These instructions provide details on how to use Postman to interact with each A
 
 ## Approach and Design Decisions
 
-### 1️⃣ API Framework Choice: Flask vs. FastAPI
+### General Approach
 
-The choice between **Flask** and **FastAPI** was based on various factors:
+I designed this ATM system with a focus on **modularity, scalability, and maintainability**. The system is built using a **three-layered architecture**, ensuring a clear **separation of concerns**. Each layer—**API, Service, and Data Access**—has a distinct responsibility, making the codebase easier to understand, test, and extend. This approach aligns with the **Separation of Concerns (SoC)** principle, which is crucial for building robust and scalable applications.
 
-| Criteria              | Flask  | FastAPI |
-|----------------------|--------|---------|
-| **Performance**      | Sync-based, slightly slower | Async-based, significantly faster |
-| **Ease of Use**      | Simple, widely used | Slightly steeper learning curve |
-| **Community Support** | Large ecosystem | Growing but smaller community |
-| **Built-in Validation** | Manual validation needed | Automatic data validation |
-| **SQLAlchemy Integration**| Excellent support | Requires async drivers |
+### Key Concepts
+
+#### Three-Layered Architecture:
+
+**API Layer (Flask Routes)**
+- Handles HTTP requests and responses.
+- Validates incoming data.
+- Formats JSON responses.
+
+**Service Layer (Business Logic)**
+- Implements the core logic for account operations.
+- Ensures concurrency safety.
+- Validates withdrawal and deposit rules.
+
+**Data Access Layer (SQLAlchemy ORM)**
+- Manages database interactions.
+- Implements row-level locking for safe concurrent transactions.
+- Ensures data consistency.
+
+**Separation of Concerns (SoC)**
+- Each layer has a specific mission, ensuring that the code is modular and easy to maintain.
+- This separation also makes it easier to test individual components in isolation.
+
+**Database Design**
+- I chose **SQLite in-memory mode** with SQLAlchemy ORM to simulate a relational database. This approach provides **ACID compliance**, ensuring atomicity, consistency, isolation, and durability for financial transactions.
+- While SQLite is not ideal for high-concurrency applications, I implemented additional safeguards to handle race conditions effectively.
+
+### Design Decisions
+
+**1️⃣ API Framework Choice: Flask vs. FastAPI**
+
+When choosing between Flask and FastAPI, I considered several factors:
+
+| Criteria          | Flask                               | FastAPI                             |
+|-------------------|------------------------------------|--------------------------------------|
+| Performance       | Sync-based, slightly slower         | Async-based, significantly faster    |
+| Ease of Use      | Simple, widely used                | Slightly steeper learning curve     |
+| Community Support | Large ecosystem                   | Growing but smaller community        |
+| Built-in Validation| Manual validation needed            | Automatic data validation           |
+| SQLAlchemy Integration | Excellent support                 | Requires async drivers             |
 
 **Why Flask?**
+
 - Flask’s synchronous nature aligns well with SQLAlchemy, which does not fully support async operations.
-- Flask has a mature ecosystem and strong community support.
-- Simplicity and flexibility make it an excellent fit for a transactional API.
+- Flask has a mature ecosystem and strong community support, making it easier to find resources and troubleshoot issues.
+- Its simplicity and flexibility make it an excellent fit for a transactional API like this ATM system.
 
----
+**2️⃣ Separation of Concerns (SoC)**
 
-### 2️⃣ Three-Layered Architecture
+I prioritized Separation of Concerns throughout the project. By dividing the system into three distinct layers (API, Service, and Data Access), I ensured that each component has a single responsibility. This approach not only makes the codebase easier to maintain but also simplifies testing and debugging.
 
-The system is structured into **three distinct layers**:
-1. **API Layer (Flask Routes)**
-   - Handles HTTP requests & responses.
-   - Validates incoming data.
-   - Formats JSON responses.
-2. **Service Layer (Business Logic)**
-   - Implements account operations.
-   - Ensures concurrency safety.
-   - Validates withdrawal and deposit rules.
-3. **Data Access Layer (SQLAlchemy ORM)**
-   - Manages transactions and database interactions.
-   - Implements row-level locking for safe concurrent transactions.
+**3️⃣ Database Design: SQLite (In-Memory Mode)**
 
-This architecture ensures **scalability, reusability, and maintainability**.
+The choice of SQLite in-memory mode was driven by the need for a lightweight, fast, and ACID-compliant database. While SQLite is not typically used for high-concurrency applications, I implemented additional safeguards to handle race conditions effectively. Key benefits of this design include:
 
----
-
-### 3️⃣ Database Design: SQLite (In-Memory Mode)
-
-Using **SQLite in-memory mode** offers:
-- **ACID Compliance** – Ensures atomic, consistent, and durable transactions.
-- **Relational Integrity** – Supports primary/foreign keys and constraints.
-- **Faster Execution** – No disk writes; all operations occur in RAM.
+- **ACID Compliance**: Ensures atomic, consistent, isolated, and durable transactions.
+- **Relational Integrity**: Supports primary/foreign keys and constraints, making it suitable for financial transactions.
+- **Faster Execution**: All operations occur in RAM, eliminating disk I/O overhead.
 
 This design was chosen due to **Heroku’s free-tier limitations** (no persistent database support). While **SQLite is not ideal for high concurrency**, I implemented additional **thread-based locking** to ensure transactional safety.
 
+
 ---
 
-## Challenges Faced & Solutions
+### Challenges Faced & Solutions
 
-### 1️⃣ Handling Data Persistence on Heroku
+**1️⃣ Handling Data Persistence on Heroku**
 
 **Problem:**  
-Heroku resets data on each deployment since the free plan does not support persistent databases.  
+Heroku resets data on each deployment since the free plan does not support persistent databases. This posed a significant challenge for maintaining data consistency across deployments.
+
 **Solution:**  
-- Using SQLite in-memory with SQLAlchemy ORM for transactions.
-- Ensuring all data operations remain consistent within each session.
+I opted for SQLite in-memory mode with SQLAlchemy ORM, which allows the system to function as a relational database without requiring persistent storage.
 
----
+To ensure data consistency, I implemented session-based transactions, ensuring that all operations remain consistent within each session.
 
-### 2️⃣ Handling Race Conditions in Concurrent Withdrawals
+**2️⃣ Handling Race Conditions in Concurrent Withdrawals**
 
 **Problem:**  
-Multiple users withdrawing simultaneously can cause incorrect balances.  
+Multiple users withdrawing funds simultaneously can lead to incorrect balances, especially in a multi-threaded environment. SQLite, while lightweight, is not inherently designed for high-concurrency applications.
+
 **Solution:**  
-- **Row-level locking (`WITH FOR UPDATE`)** to prevent concurrent modifications.
-- **Global `threading.Lock()`** to control access to shared resources.
-- **Retry mechanism** for failed transactions due to locking.
+Row-level locking (`WITH FOR UPDATE`): I used SQLite’s row-level locking mechanism to prevent concurrent modifications to the same account.
 
----
+Global `threading.Lock()`: To further enhance concurrency safety, I implemented a global lock object to control access to shared resources.
 
-### 3️⃣ Error Handling and Response Standardization
+Retry Mechanism: In cases where transactions fail due to locking, I added a retry mechanism to ensure that the operation eventually succeeds.
 
-Implemented structured error handling with:
-- **400 Bad Request** – Invalid input.
-- **404 Not Found** – Account does not exist.
-- **405 Method Not Allowed** – Incorrect HTTP method.
-- **415 Unsupported Media Type** – Missing JSON request body.
-- **500 Internal Server Error** – Unexpected system failures.
+**3️⃣ Error Handling and Response Standardization**
+
+To ensure a robust and user-friendly API, I implemented structured error handling with clear and consistent responses. The system handles various error cases, including:
+
+- **400 Bad Request**: Invalid input or insufficient funds.
+- **404 Not Found**: Account does not exist.
+- **405 Method Not Allowed**: Incorrect HTTP method.
+- **415 Unsupported Media Type**: Missing or invalid JSON request body.
+- **500 Internal Server Error**: Unexpected system failures.
+
+Proper error handling and standardized responses contribute to a more reliable API by providing clear feedback to the clients using the ATM system.
+
 
 ---
 
