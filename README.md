@@ -110,6 +110,25 @@ The API will be available at `http://127.0.0.1:5000/`.
 ---
 
 ## API Endpoints
+in case you missed
+When the application is initialized, the database is pre-populated with the following sample accounts.
+
+| Account Number | Balance (USD) |
+|---------------|--------------|
+| 10001         | 1000.0       |
+| 10002         | 2000.0       |
+| 10003         | 3000.0       |
+| 10004         | 4000.0       |
+| 10005         | 5000.0       |
+| 10006         | 6000.0       |
+| 10007         | 7000.0       |
+| 10008         | 8000.0       |
+| 10009         | 9000.0       |
+| 100000        | 10000.0      |
+
+These accounts can be used for testing the API endpoints during development and demonstration purposes.
+
+
 with curl
 ---
 
@@ -408,6 +427,9 @@ This ATM system provides:
 ✅ Secure transaction handling with race condition prevention.  
 ✅ Robust API with proper error handling.
 
-**GitHub Repository:** [YOUR_GITHUB_REPO_URL]  
+  
 **Live API:** https://atm-441f2ec56b85.herokuapp.com/
+```bash
+have fun!
 ```
+
