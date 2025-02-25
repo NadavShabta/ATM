@@ -110,6 +110,8 @@ The API will be available at `http://127.0.0.1:5000/`.
 ---
 
 ## API Endpoints
+with curl
+---
 
 ### 1️⃣ Retrieve Account Balance
 
@@ -197,6 +199,82 @@ curl -X POST "http://127.0.0.1:5000/accounts/10001/deposit" -H "Content-Type: ap
 - **Error Cases:**
   - 400 Bad Request – Invalid amount format.
   - 404 Not Found – Account does not exist.
+
+---
+
+
+## with Postman
+
+
+### 1️⃣ Retrieve Account Balance
+
+- **Endpoint:** `GET /accounts/{account_number}/balance`
+- **Description:** Fetches the current balance of the account.
+- **Example Request using Postman:**
+  - Open Postman and create a GET request.
+  - Set the URL to: `http://127.0.0.1:5000/accounts/10001/balance`
+  - Click "Send".
+  
+- **Response:**
+```json
+{
+    "success": true,
+    "data": {
+        "account_number": "10001",
+        "balance": 5000.0
+    },
+    "code": 200
+}
+```
+
+### 2️⃣ Withdraw Money
+
+- **Endpoint:** `POST /accounts/{account_number}/withdraw`
+- **Description:** Withdraws a specified amount from the account.
+- **Example Request using Postman:**
+  - Open Postman and create a POST request.
+  - Set the URL to: `http://127.0.0.1:5000/accounts/10001/withdraw`
+  - Go to the Body tab, select "raw", and set data type to JSON.
+  - Enter the JSON payload: `{"amount": 100.0}`
+  - Click "Send".
+  
+- **Response:**
+```json
+{
+    "success": true,
+    "data": {
+        "account_number": "10001",
+        "new_balance": 4900.0
+    },
+    "code": 200
+}
+```
+
+### 3️⃣ Deposit Money
+
+- **Endpoint:** `POST /accounts/{account_number}/deposit`
+- **Description:** Deposits a specified amount into the account.
+- **Example Request using Postman:**
+  - Open Postman and create a POST request.
+  - Set the URL to: `http://127.0.0.1:5000/accounts/10001/deposit`
+  - Go to the Body tab, select "raw", and set data type to JSON.
+  - Enter the JSON payload: `{"amount": 200.0}`
+  - Click "Send".
+  
+- **Response:**
+```json
+{
+    "success": true,
+    "data": {
+        "account_number": "10001",
+        "new_balance": 5200.0
+    },
+    "code": 200
+}
+```
+
+These instructions provide details on how to use Postman to interact with each API endpoint. Make sure you replace `{account_number}` with the actual account number when testing the endpoints.
+
 
 ---
 
