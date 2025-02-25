@@ -110,24 +110,6 @@ The API will be available at `http://127.0.0.1:5000/`.
 ---
 
 ## API Endpoints
-in case you missed
-When the application is initialized, the database is pre-populated with the following sample accounts.
-
-| Account Number | Balance (USD) |
-|---------------|--------------|
-| 10001         | 1000.0       |
-| 10002         | 2000.0       |
-| 10003         | 3000.0       |
-| 10004         | 4000.0       |
-| 10005         | 5000.0       |
-| 10006         | 6000.0       |
-| 10007         | 7000.0       |
-| 10008         | 8000.0       |
-| 10009         | 9000.0       |
-| 100000        | 10000.0      |
-
-These accounts can be used for testing the API endpoints during development and demonstration purposes.
-
 
 with curl
 ---
@@ -220,7 +202,23 @@ curl -X POST "http://127.0.0.1:5000/accounts/10001/deposit" -H "Content-Type: ap
   - 404 Not Found – Account does not exist.
 
 ---
+in case you missed
+When the application is initialized, the database is pre-populated with the following sample accounts.
 
+| Account Number | Balance (USD) |
+|---------------|--------------|
+| 10001         | 1000.0       |
+| 10002         | 2000.0       |
+| 10003         | 3000.0       |
+| 10004         | 4000.0       |
+| 10005         | 5000.0       |
+| 10006         | 6000.0       |
+| 10007         | 7000.0       |
+| 10008         | 8000.0       |
+| 10009         | 9000.0       |
+| 100000        | 10000.0      |
+
+These accounts can be used for testing the API endpoints during development and demonstration purposes.
 
 ## with Postman
 
