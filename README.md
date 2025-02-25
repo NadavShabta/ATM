@@ -48,7 +48,7 @@ The project follows a structured three-layered architecture:
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/ATM-System.git
+git clone https://github.com/NadavShabta/ATM-System.git
 cd ATM-System 
 ```
 
