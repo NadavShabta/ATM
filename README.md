@@ -43,7 +43,7 @@ When the application is initialized, the database is pre-populated with the foll
 | 10007         | 7000.0       |
 | 10008         | 8000.0       |
 | 10009         | 9000.0       |
-| 100000        | 10000.0      |
+| 100010        | 10000.0      |
 
 These accounts can be used for testing the API endpoints during development and demonstration purposes.
 
