@@ -68,40 +68,12 @@ pip install -r requirements.txt
 Copy
 python run.py
 ```
-The API will be available at http://127.0.0.1:5000/.
-
-
-
-# Setup & Installation
-
-### Step 1: Clone the Repository
-
-```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/ATM-System.git
-cd ATM-System
-```
-
-### Step 2: Create a Virtual Environment
-
-```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-### Step 3: Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### Step 4: Run the Application
-
-```bash
-python run.py
 ```
 The API will be available at `http://127.0.0.1:5000/`.
 
----
+```
+
+
 
 ## API Endpoints
 
