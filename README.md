@@ -27,6 +27,7 @@ The API is deployed on Heroku and accessible at:
 [https://atm-441f2ec56b85.herokuapp.com/](https://atm-441f2ec56b85.herokuapp.com/)
 
 ---
+
 ## Sample Accounts
 
 When the application is initialized, the database is pre-populated with the following sample accounts.
@@ -45,7 +46,9 @@ When the application is initialized, the database is pre-populated with the foll
 | 100000        | 10000.0      |
 
 These accounts can be used for testing the API endpoints during development and demonstration purposes.
+
 ---
+
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
