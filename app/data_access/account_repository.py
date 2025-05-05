@@ -12,10 +12,15 @@ including row-level locking for balance updates to prevent race conditions.
 import logging
 import time
 import threading
+import random
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from app import db
 from app.models import Account, Transaction
+from sqlalchemy.exc import OperationalError
+from my_app import get_session, logger
+
+
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -55,9 +60,11 @@ def get_account(account_number, for_update=False):
         session.close()
 
 
+
+
 def update_account_balance(account_number, amount, max_retries=5):
     """
-    Updates an account balance with proper locking and retry mechanisms.
+    Updates an account balance with row-level locking and retry mechanisms for SQLite.
 
     Args:
         account_number (str): The account number to update.
@@ -67,20 +74,13 @@ def update_account_balance(account_number, amount, max_retries=5):
     Returns:
         dict: A dictionary containing success status and the updated balance, or an error message.
     """
-    retry_delay = 0.05  # Initial delay for retrying in case of a locked database
+    retry_delay = 0.05  # Initial delay for retrying in case of contention
     session = get_session()
 
     for attempt in range(max_retries):
-        lock_acquired = False  # Track if lock was acquired
         try:
-            # Attempt to acquire the lock to prevent race conditions
-            lock_acquired = balance_lock.acquire(blocking=False)
-            if not lock_acquired:
-                logger.warning(
-                    f"Concurrent transaction detected for account {account_number}. Retry attempt {attempt + 1}/{max_retries}.")
-                return {"error": "Another transaction is in progress. Please try again."}
-
             with session.begin():  # Ensures atomic transaction
+                # Row-level locking (translates to RESERVED lock in SQLite)
                 account = session.query(Account).filter_by(account_number=account_number).with_for_update().first()
                 if not account:
                     return {"error": "Account not found"}
@@ -94,17 +94,18 @@ def update_account_balance(account_number, amount, max_retries=5):
 
         except OperationalError as e:
             session.rollback()
+            # Handle SQLite-specific database locked error
             if "database is locked" in str(e).lower():
-                logger.warning(f"Database locked, retrying ({attempt + 1}/{max_retries})...")
-                time.sleep(retry_delay)
-                retry_delay *= 2  # Exponential backoff to reduce contention
+                logger.warning(
+                    f"Database contention for account {account_number}, amount {amount}, "
+                    f"retry attempt {attempt + 1}/{max_retries}"
+                )
+                time.sleep(retry_delay + random.uniform(0, 0.01))  # Add jitter
+                retry_delay *= 2  # Exponential backoff
                 continue
             return {"error": f"Database error: {e}"}
 
-        finally:
-            session.close()
-            if lock_acquired:
-                balance_lock.release()
+    return {"error": "Max retries exceeded due to database contention"}
 
 
 def create_transaction(account_number, transaction_type, amount):
