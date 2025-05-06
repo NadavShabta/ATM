@@ -58,81 +58,46 @@ def get_account(account_number, for_update=False):
 
 
 
-def update_account_balance(account_number, amount, max_retries=5):
+def perform_transaction(account_number, amount, transaction_type, max_retries=5):
     """
-    Updates an account balance with row-level locking and retry mechanisms for SQLite.
-
+    Performs a transaction (withdrawal or deposit) atomically, updating Accounts and Transactions.
+    
     Args:
-        account_number (str): The account number to update.
-        amount (float): The amount to adjust the balance by (negative for withdrawals).
-        max_retries (int): The maximum number of retry attempts in case of database locking.
-
+        account_number (str): The account number.
+        amount (float): The amount to adjust (negative for withdrawal, positive for deposit).
+        transaction_type (str): 'withdraw' or 'deposit'.
+        max_retries (int): Maximum retry attempts for database contention.
+    
     Returns:
-        dict: A dictionary containing success status and the updated balance, or an error message.
+        dict: Success status, new balance, or error message.
     """
-    retry_delay = 0.05  # Initial delay for retrying in case of contention
+    retry_delay = 0.05
     session = get_session()
-
     for attempt in range(max_retries):
         try:
-            with session.begin():  # Ensures atomic transaction
-                # Row-level locking (translates to RESERVED lock in SQLite)
+            with session.begin():  # Single transaction for both operations
+                # Update balance with row-level locking
                 account = session.query(Account).filter_by(account_number=account_number).with_for_update().first()
                 if not account:
                     return {"error": "Account not found"}
-
                 if amount < 0 and account.balance < abs(amount):
                     return {"error": "Insufficient funds"}
-
                 account.balance += amount
-
+                # Create transaction
+                transaction = Transaction(account_id=account.id, type=transaction_type, amount=abs(amount))
+                session.add(transaction)
+            logger.info(f"Transaction {transaction_type} of {abs(amount)} for account {account_number} completed")
             return {"success": True, "account_number": account_number, "new_balance": account.balance}
-
         except OperationalError as e:
             session.rollback()
-            # Handle SQLite-specific database locked error
             if "database is locked" in str(e).lower():
-                logger.warning(
-                    f"Database contention for account {account_number}, amount {amount}, "
-                    f"retry attempt {attempt + 1}/{max_retries}"
-                )
-                time.sleep(retry_delay + random.uniform(0, 0.01))  # Add jitter
-                retry_delay *= 2  # Exponential backoff
+                logger.warning(f"Database contention for account {account_number}, attempt {attempt + 1}/{max_retries}")
+                time.sleep(retry_delay + random.uniform(0, 0.01))
+                retry_delay *= 2
                 continue
             return {"error": f"Database error: {e}"}
-
+        except SQLAlchemyError as e:
+            session.rollback()
+            logger.error(f"Transaction failed for account {account_number}: {e}")
+            return {"error": f"Transaction failed: {str(e)}"}
     return {"error": "Max retries exceeded due to database contention"}
-
-
-def create_transaction(account_number, transaction_type, amount):
-    """
-    Records a transaction in the database.
-
-    Args:
-        account_number (str): The account number associated with the transaction.
-        transaction_type (str): The type of transaction ('deposit' or 'withdraw').
-        amount (float): The transaction amount.
-
-    Returns:
-        dict: A success message if the transaction is recorded, or an error message.
-    """
-    session = db.session
-    try:
-        account = session.query(Account).filter_by(account_number=account_number).first()
-        if not account:
-            return {"error": "Account not found"}
-
-        transaction = Transaction(account_id=account.id, type=transaction_type, amount=amount)
-        session.add(transaction)
-        session.commit()
-
-        logger.info(f"Transaction recorded: {transaction_type} of {amount} for account {account_number}")
-        return {"success": True}
-
-    except SQLAlchemyError as e:
-        session.rollback()
-        logger.error(f"Transaction failed for account {account_number}: {e}")
-        return {"error": f"Transaction failed: {str(e)}"}
-
-    finally:
-        session.close()
