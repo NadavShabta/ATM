@@ -25,10 +25,6 @@ from my_app import get_session, logger
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Global lock to prevent concurrent modifications of account balances
-balance_lock = threading.Lock()
-
-
 def get_session():
     """
     Creates and returns a new scoped session for database operations.
