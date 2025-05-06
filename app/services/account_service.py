@@ -45,36 +45,26 @@ def get_balance_service(account_number):
 def withdraw_service(account_number, amount):
     """
     Process a withdrawal request with validation and proper handling.
-
+    
     Args:
         account_number (str): The unique account number.
         amount (float): Amount to withdraw.
-
+    
     Returns:
         dict: A success message with the updated balance or an error message.
     """
     logger.info(f"Processing withdrawal for account {account_number}, amount: {amount}")
-
-    # Validate inputs
     if not validate_account_number(account_number):
         return format_error("Invalid account number format", 400)
-
     valid, amount = validate_amount(amount)
     if not valid:
         return format_error("Invalid amount format or must be greater than zero", 400)
-
     try:
-        # Perform withdrawal via the repository (handles locking & balance check)
-        result = update_account_balance(account_number, -amount)
+        result = perform_transaction(account_number, -amount, 'withdraw')
         if "error" in result:
-            return result  # Return error from repository
-
-        # Log transaction
-        create_transaction(account_number, 'withdraw', amount)
-
-        logger.info(f"Withdrawal successful for account {account_number}, new balance: {result['new_balance']}")
+            return result
+        logger.info(f"Withdrawal successful for account {account_number}, new_balance: {result['new_balance']}")
         return result
-
     except SQLAlchemyError as e:
         logger.error(f"Database error during withdrawal for account {account_number}: {e}")
         return format_error("A database error occurred during withdrawal", 500)
@@ -85,36 +75,26 @@ def withdraw_service(account_number, amount):
 def deposit_service(account_number, amount):
     """
     Process a deposit with validation and proper handling.
-
+    
     Args:
         account_number (str): The unique account number.
         amount (float): Amount to deposit.
-
+    
     Returns:
         dict: A success message with the updated balance or an error message.
     """
     logger.info(f"Processing deposit for account {account_number}, amount: {amount}")
-
-    # Validate inputs
     if not validate_account_number(account_number):
         return format_error("Invalid account number format", 400)
-
     valid, amount = validate_amount(amount)
     if not valid:
         return format_error("Invalid amount format or must be greater than zero", 400)
-
     try:
-        # Perform deposit via the repository (handles locking)
-        result = update_account_balance(account_number, amount)
+        result = perform_transaction(account_number, amount, 'deposit')
         if "error" in result:
-            return result  # Return error from repository
-
-        # Log transaction
-        create_transaction(account_number, 'deposit', amount)
-
-        logger.info(f"Deposit successful for account {account_number}, new balance: {result['new_balance']}")
+            return result
+        logger.info(f"Deposit successful for account {account_number}, new_balance: {result['new_balance']}")
         return result
-
     except SQLAlchemyError as e:
         logger.error(f"Database error during deposit for account {account_number}: {e}")
         return format_error("A database error occurred during deposit", 500)
